@@ -6,6 +6,8 @@ const cookieParser = require('cookie-parser');
 var jwt = require('jsonwebtoken');
 const multer  = require('multer');
 const fs = require('fs');
+require('dotenv').config()
+
 
 const upload = multer({ dest: 'uploads/' })
 const User = require('./models/User');
@@ -20,7 +22,7 @@ app.use('/uploads', express.static(__dirname + '/uploads'));
 const salt = bcrypt.genSaltSync(10);
 const secret = "laksjdflkajslkfjalksf";
 
-mongoose.connect('mongodb+srv://admin-lavesh:admin123@cluster0.agz64.mongodb.net/blogDB');
+mongoose.connect(process.env.MONGO_URL);
 
 app.post("/register", async (req,res) => {
     const { username, password } = req.body;
@@ -140,11 +142,6 @@ app.get('/post/:id', async (req,res) => {
     const postDoc = await Post.findById(id).populate('author',['username']);
     res.json(postDoc);
 })
-  
-
-// app.get('/post', async (req,res) => {
-//     res.json(await Post.find().populate('author', ['username']));
-// });
 
 app.listen(4000);
 
