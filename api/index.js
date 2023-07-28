@@ -92,6 +92,40 @@ app.post('/post', upload.single('file'), async (req,res) => {
 
 });
 
+app.put('/post', upload.single('file'), async (req,res) => {
+    
+    const newPath = null;
+    if(req.file){
+        const { originalname , path } = req.file;
+        const parts = originalname.split('.');
+        const ext = parts[parts.length -1];
+        newPath =  path+'.'+ext; 
+        fs.renameSync(path, newPath);
+    }
+    
+    const { token } = req.cookies;
+    jwt.verify(token, secret, {}, async (err,info) => {
+        if (err) throw err;
+        const {id,title, summary , content} = req.body;
+        const postDoc = await Post.findById(id);
+        const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
+        if( !isAuthor ) {
+            return res.status(400).json('You are not the author of this post');
+        }
+
+        postDoc.title = title;
+        postDoc.summary = summary;
+        postDoc.content = content;
+        postDoc.cover = newPath ? newPath : postDoc.cover;
+        await postDoc.save();
+        
+        res.json(postDoc);
+    });
+    
+    
+
+});
+
 app.get('/post', async (req, res) => {
     try {
       const posts = await Post.find().populate('author',['username']);
@@ -100,6 +134,12 @@ app.get('/post', async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+
+app.get('/post/:id', async (req,res) => {
+    const { id } = req.params;
+    const postDoc = await Post.findById(id).populate('author',['username']);
+    res.json(postDoc);
+})
   
 
 // app.get('/post', async (req,res) => {
